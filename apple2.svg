@@ -1,0 +1,23 @@
+   <svg:defs>
+     <svg:linearGradient id="lineargradient1">
+       <svg:stop offset="0" style="stop-color:red;stop-opacity:1.0000000;"/>
+       <svg:stop offset="1" style="stop-color:blue;stop-opacity:0.0000000;"/>
+     </svg:linearGradient>
+     <svg:linearGradient id="lineargradient2" gradientUnits="userSpaceOnUse" x1="450" y1="230" x2="570" y2="350">
+       <svg:stop offset="0%" style="stop-color:red;stop-opacity:1.0000000;"/>
+       <svg:stop offset="100%" style="stop-color:blue;stop-opacity:0.0000000;"/>
+
+     </svg:linearGradient>
+   </svg:defs>
+   <svg:ellipse id="n2" cx="60" cy="60" rx="500" ry="500" fill="red" />
+   <svg:rect id="n1" x="150" y="30" width="120" height="120" fill="yellow" />
+   <svg:rect id="n3" x="190" y="30" width="120" height="120" fill-opacity="0.5" />
+   <svg:rect id="n4" x="150" y="100" width="120" height="120" fill="none" stroke="blue" stroke-width="5px" stroke-opacity="0.5" />
+   <svg:circle id="n5" cx="90" cy="230" r="60" fill="green" stroke="silver" stroke-width="9px" />
+   <svg:polygon id="n6" fill="green" fill-opacity="0.5" stroke="blue" points="248,115 239,140 243,140 237,163 241,163 235,187 253,159 249,159 261,136 256,136 267,115" />
+   <svg:path id="n7" fill="green" stroke="blue" d="M 16,0 C 16,0 0,24 0,33 C 0,42 7,49 16,49 C 25,49 32,42 32,33 C 32,24 16,0 16,0" />
+
+   <svg:path id="n9" fill="green" stroke="blue" d="M 200,200 c 0,0 -16,24 -16,33 c 0,9 7,15 16,15 c 9,0 16,-7 16,-15 c 0,-9 -16,-33 -16,-33" />
+   <svg:rect id="n10" x="250" y="230" width="120" height="120" fill="url(#lineargradient1)" />
+   <svg:rect id="n11" x="450" y="230" width="120" height="120" fill="url(#lineargradient2)" />
+ </svg:svg>

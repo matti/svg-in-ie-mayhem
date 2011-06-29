@@ -1,0 +1,393 @@
+<public:component tagname="svg">
+   <public:attach event="ondocumentready" onevent="convert()"/>	
+</public:component>
+
+<script language="JScript">
+  var re_split = /[ ,]/;
+  var re_ltrim = /^\s+/g;
+  var re_rtrim = /\s+$/g;
+
+  function ltrim(str)
+  {
+    return str.replace(re_ltrim, '');
+  }
+  
+  function rtrim(str)
+  {
+    return str.replace(re_rtrim, '');
+  }
+
+  function convert() 
+  {
+    // create a container for the VML
+    var oVmlRoot = element.ownerDocument.createElement('div');
+    oVmlRoot.style.cssText = element.style.cssText;
+
+    // setup default fill and stroke
+    var def_fill = {color: 'black', opacity: '1'};
+    var def_stroke = {color: 'none', opacity: '1', width: '1px', join: 'miter'};
+    
+    // start the conversion
+    convertChildren(oVmlRoot, element, def_fill, def_stroke);
+
+    // swap the SVG element contents with eh new VML
+    element.parentNode.replaceChild(oVmlRoot, element);
+  }
+
+  function convertChildren(oVmlRoot, oSvgRoot, default_fill, default_stroke)
+  {
+      // loop over the child SVG tags and convert them to VML
+      for (i=0; i<oSvgRoot.children.length; i++)
+      {
+         var oSvg = oSvgRoot.children[i];
+         var sTagName = oSvg.tagName;
+         if (sTagName == "rect")
+         {
+            var oVml = element.ownerDocument.createElement('v:rect');
+            if (oSvg.getAttribute('id') != '')
+              oVml.id = oSvg.id;
+            oVml.style.position = 'absolute';
+            oVml.style.left = oSvg.getAttribute('x');
+            oVml.style.top = oSvg.getAttribute('y');
+            oVml.style.width = oSvg.getAttribute('width');
+            oVml.style.height = oSvg.getAttribute('height');
+            oVml.setAttribute('coordsize', '21600,21600');
+
+            setFill(oVml, oSvg, default_fill);
+            setStroke(oVml, oSvg, default_stroke);
+
+            oVmlRoot.appendChild(oVml);
+         }
+         else if (sTagName == "ellipse")
+         {
+            var oVml = element.ownerDocument.createElement('v:oval');
+            if (oSvg.getAttribute('id') != '')
+              oVml.id = oSvg.id;
+            oVml.style.position = 'absolute';
+            oVml.style.left = oSvg.getAttribute('cx') - oSvg.getAttribute('rx');
+            oVml.style.top = oSvg.getAttribute('cy') - oSvg.getAttribute('ry');
+            oVml.style.width = oSvg.getAttribute('rx') * 2;
+            oVml.style.height = oSvg.getAttribute('ry') * 2;
+            oVml.setAttribute('coordsize', '21600,21600');
+
+            setFill(oVml, oSvg, default_fill);
+            setStroke(oVml, oSvg, default_stroke);
+
+            oVmlRoot.appendChild(oVml);
+         }
+         else if (sTagName == "circle")
+         {
+            var oVml = element.ownerDocument.createElement('v:oval');
+            if (oSvg.getAttribute('id') != '')
+              oVml.id = oSvg.id;
+            oVml.style.position = 'absolute';
+            oVml.style.left = oSvg.getAttribute('cx') - oSvg.getAttribute('r');
+            oVml.style.top = oSvg.getAttribute('cy') - oSvg.getAttribute('r');
+            oVml.style.width = oSvg.getAttribute('r') * 2;
+            oVml.style.height = oSvg.getAttribute('r') * 2;
+            oVml.setAttribute('coordsize', '21600,21600');
+
+            setFill(oVml, oSvg, default_fill);
+            setStroke(oVml, oSvg, default_stroke);
+
+            oVmlRoot.appendChild(oVml);
+         }
+         else if (sTagName == "polyline")
+         {
+            var oVml = element.ownerDocument.createElement('v:polyline');
+            if (oSvg.getAttribute('id') != '')
+              oVml.id = oSvg.id;
+            oVml.style.position = 'absolute';
+            oVml.style.left = '0';
+            oVml.style.top = '0';
+            oVml.style.width = '21600';
+            oVml.style.height = '21600';
+            oVml.setAttribute('coordsize', '21600,21600');
+
+            oVml.setAttribute('points', oSvg.getAttribute('points'));
+
+            setFill(oVml, oSvg, default_fill);
+            setStroke(oVml, oSvg, default_stroke);
+
+            oVmlRoot.appendChild(oVml);
+         }
+         else if (sTagName == "polygon")
+         {
+            var oVml = element.ownerDocument.createElement('v:shape');
+            if (oSvg.getAttribute('id') != '')
+              oVml.id = oSvg.id;
+            oVml.style.position = 'absolute';
+            oVml.style.left = '0';
+            oVml.style.top = '0';
+            oVml.style.width = '21600';
+            oVml.style.height = '21600';
+            oVml.setAttribute('coordsize', '21600,21600');
+
+            // adjust for the way VML does a polygon
+            var points = ltrim(oSvg.getAttribute('points')).split(re_split);
+            var firstpointx = points[0];
+            var firstpointy = points[1];
+            var path = 'm ' + firstpointx + ',' + firstpointy + ' l ' + points + ' x e';
+            oVml.setAttribute('path', path);
+
+            setFill(oVml, oSvg, default_fill);
+            setStroke(oVml, oSvg, default_stroke);
+
+            oVmlRoot.appendChild(oVml);
+         }
+         else if (sTagName == "path")
+         {
+            var oVml = element.ownerDocument.createElement('v:shape');
+            if (oSvg.getAttribute('id') != '')
+              oVml.id = oSvg.id;
+            oVml.style.position = 'absolute';
+            oVml.style.left = '0';
+            oVml.style.top = '0';
+            oVml.style.width = '21600';
+            oVml.style.height = '21600';
+            oVml.setAttribute('coordsize', '21600,21600');
+
+            // adjust some SVG path commands to VML commands
+            var path = oSvg.getAttribute('d');
+            path = path.replace(/c/g,'v');
+            path = path.replace(/z/g,'x');
+
+            // round all decimal points to integers
+            // VML does not appear to parse them correctly
+            if (path.search(/\./) > -1) {
+              pathitems = path.split(re_split);
+              for (var i=0; i<pathitems.length; i++) {
+                if (isNaN(parseFloat(pathitems[i])) == false)
+                  pathitems[i] = Math.round(pathitems[i]);
+              }
+              path = pathitems.join(" ");
+            }
+            oVml.setAttribute('path', path);
+
+            setFill(oVml, oSvg, default_fill);
+            setStroke(oVml, oSvg, default_stroke);
+
+            oVmlRoot.appendChild(oVml);
+         }
+         else if (sTagName == "g")
+         {
+            var oVml = element.ownerDocument.createElement('v:group');
+            if (oSvg.getAttribute('id') != '')
+              oVml.id = oSvg.id;
+            oVml.style.position = 'absolute';
+            oVml.style.left = '0';
+            oVml.style.top = '0';
+            oVml.style.width = '21600';
+            oVml.style.height = '21600';
+            oVml.setAttribute('coordsize', '21600,21600');
+
+            var local_fill = getFill(oSvg, default_fill);
+            var local_stroke = getStroke(oSvg, default_stroke);
+
+            convertChildren(oVml, oSvg, local_fill, local_stroke);
+
+            oVmlRoot.appendChild(oVml);
+         }
+      }
+  }
+
+  function setFill(oVml, oSvg, defaults)
+  {
+    var oFill = element.ownerDocument.createElement('v:fill');
+
+    // check for attributes and STYLE
+    var fill = oSvg.getAttribute('fill');
+    if (fill == null)
+      fill = oSvg.style.getAttribute('fill');
+
+    // adjust for VML
+    if (fill == 'none')
+      oFill.setAttribute('on', 'false');
+    else if (fill != null && fill.substr(0,5) == 'url(#')
+      setGradient(oFill, fill.substr(5, fill.length - 6));
+    else if (fill != null)
+      oFill.setAttribute('color', fill);
+    else
+      oFill.setAttribute('color', defaults.color);
+
+    // check for attributes and STYLE
+    var opacity = oSvg.getAttribute('fill-opacity');
+    if (opacity == null)
+      opacity = oSvg.style.getAttribute('fill-opacity');
+    if (opacity == null)
+      opacity = defaults.opacity;
+      
+    oFill.setAttribute('opacity', opacity);
+
+//    oVml.insertAdjacentHTML('beforeEnd', oFill.outerHTML + '</v:fill>');
+    oVml.appendChild(oFill);
+  }
+
+  function getFill(oSvg, defaults)
+  {
+    var local = defaults;
+    
+    // check for attributes and STYLE
+    var fill = oSvg.getAttribute('fill');
+    if (fill == null)
+      fill = oSvg.style.getAttribute('fill');
+
+    if (fill != null)
+      local.color = fill;
+
+    // check for attributes and STYLE
+    var opacity = oSvg.getAttribute('fill-opacity');
+    if (opacity == null)
+      opacity = oSvg.style.getAttribute('fill-opacity');
+    if (opacity != null)
+      local.opacity = opacity;
+      
+    return local;
+  }
+
+  function setStroke(oVml, oSvg, defaults)
+  {
+    var oStroke = element.ownerDocument.createElement('v:stroke');
+
+    // check for attributes and STYLE
+    var stroke = oSvg.getAttribute('stroke');
+    if (stroke == null)
+      stroke = oSvg.style.getAttribute('stroke');
+    if (stroke == null)
+      stroke = defaults.color;
+
+    if (stroke == 'none')
+      oStroke.setAttribute('on', 'false');
+    else
+      oStroke.setAttribute('color', stroke);
+
+    // check for attributes and STYLE
+    var strokewidth = oSvg.getAttribute('stroke-width');
+    if (strokewidth == null)
+      strokewidth = oSvg.style.getAttribute('stroke-width');
+
+    if (strokewidth == null)
+      strokewidth = defaults.width;
+    else {
+      // check for an explicit unit. SVG assumes 'px' if none is given, VML assumes 'pt'
+      if (isNaN(parseInt(strokewidth.charAt(strokewidth.length - 1), 10)) == false)
+        strokewidth = parseInt(strokewidth, 10).toFixed(1) + "px";
+    }
+    
+    oStroke.setAttribute('weight', strokewidth);
+
+    // check for attributes and STYLE
+    var opacity = oSvg.getAttribute('stroke-opacity');
+    if (opacity == null)
+      opacity = oSvg.style.getAttribute('stroke-opacity');
+    if (opacity == null)
+      opacity = defaults.opacity
+      
+    oStroke.setAttribute('opacity', opacity);
+
+    // check for attributes and STYLE
+    var join = oSvg.getAttribute('stroke-linejoin');
+    if (join == null)
+      join = oSvg.style.getAttribute('stroke-linejoin');
+    if (join == null)
+      join = defaults.join;
+      
+    oStroke.setAttribute('joinstyle', join);
+    
+    oVml.appendChild(oStroke);
+  }
+
+  function getStroke(oSvg, defaults)
+  {
+    var local = defaults;
+
+    // check for attributes and STYLE
+    var stroke = oSvg.getAttribute('stroke');
+    if (stroke == null)
+      stroke = oSvg.style.getAttribute('stroke');
+
+    if (stroke != null)
+      local.color = stroke;
+
+    // check for attributes and STYLE
+    var strokewidth = oSvg.getAttribute('stroke-width');
+    if (strokewidth == null)
+      strokewidth = oSvg.style.getAttribute('stroke-width');
+
+    if (strokewidth == null)
+      local.width = strokewidth;
+
+    // check for attributes and STYLE
+    var opacity = oSvg.getAttribute('stroke-opacity');
+    if (opacity == null)
+      opacity = oSvg.style.getAttribute('stroke-opacity');
+    if (opacity != null)
+      local.opacity = opacity;
+
+    // check for attributes and STYLE
+    var join = oSvg.getAttribute('stroke-linejoin');
+    if (join == null)
+      join = oSvg.style.getAttribute('stroke-linejoin');
+    if (join != null)
+      local.join = join;
+      
+    return local;
+  }
+  
+  function setGradient(oFill, gradientid)
+  {
+    var gradient = element.ownerDocument.getElementById(gradientid);
+    if (gradient) {
+      if (gradient.tagName == 'linearGradient')
+        oFill.setAttribute('type', 'gradient');
+      else
+        oFill.setAttribute('type', 'gradientradial');
+
+      var x1 = gradient.getAttribute('x1');
+      x1 = x1 != null ? parseFloat(x1) : 0;
+      var y1 = gradient.getAttribute('y1');
+      y1 = y1 != null ? parseFloat(y1) : 0;
+      var x2 = gradient.getAttribute('x2');
+      x2 = x2 != null ? parseFloat(x2) : 1;
+      var y2 = gradient.getAttribute('y2');
+      y2 = y2 != null ? parseFloat(y2) : 0;
+      
+      var angle = Math.round(Math.atan((y2 - y1) / (x2 - x1)) * 57.29) + 180;
+      oFill.setAttribute('angle', angle);
+    
+      var stops = gradient.getElementsByTagName('stop');
+      for (var i=0; i<stops.length; i++) {
+        var stop = stops.item(i);
+
+        // check for attributes and STYLE
+        var offset = stop.getAttribute('offset');
+        if (offset == null)
+          offset = stop.style.getAttribute('offset');
+
+        // check for attributes and STYLE
+        var color = stop.getAttribute('stop-color');
+        if (color == null)
+          color = stop.style.getAttribute('stop-color');
+        if (color == null)
+          color = 'black';
+
+        // check for attributes and STYLE
+        var opacity = stop.getAttribute('stop-opacity');
+        if (opacity == null)
+          opacity = stop.style.getAttribute('stop-opacity');
+        if (opacity == null)
+          opacity = '1';
+
+        if (parseFloat(offset) == 0) {
+          oFill.setAttribute('color', color);
+          oFill.setAttribute('opacity', opacity);
+        }
+        
+        if (parseFloat(offset) == 1 || parseFloat(offset) == 100) {
+          oFill.setAttribute('color2', color);
+          oFill.setAttribute('opacity2', opacity);
+        }
+      }
+    }
+  }
+</script>
